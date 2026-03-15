@@ -1,0 +1,40 @@
+# Environment and secrets (do not push to repo)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Local diagrams (do not push)
+FLOW_DIAGRAM.html
+
+# Optional: uncomment if you store large assets or DB dumps locally
+# *.db
+# *.sqlite
+# data/

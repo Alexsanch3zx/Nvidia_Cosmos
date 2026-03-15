@@ -7,3 +7,7 @@ torchvision
 transformers>=4.51.0
 accelerate
 numpy
+pgvector
+psycopg2-binary
+python-dotenv
+sentence-transformers
