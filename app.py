@@ -2,9 +2,13 @@ import streamlit as st
 import tempfile
 import os
 from pathlib import Path
+import cv2
 from video_processor import VideoProcessor
 from model_handler import CosmosModelHandler
 from summarizer import VideoSummarizer
+from embeddings.embedder import embed_text
+from db.video_store import insert_summary
+from db.search_video import search_similar
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -119,6 +123,13 @@ with col1:
                     with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp_file:
                         tmp_file.write(uploaded_file.read())
                         video_path = tmp_file.name
+
+                    # Compute duration for DB (some schemas may require NOT NULL).
+                    cap = cv2.VideoCapture(video_path)
+                    fps = cap.get(cv2.CAP_PROP_FPS)
+                    total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                    duration_sec = (total_frames / fps) if fps and fps > 0 else None
+                    cap.release()
                     
                     # Step 1: Extract frames
                     st.info("Step 1/3: Extracting frames from video...")
@@ -146,6 +157,23 @@ with col1:
                         style=summary_style.lower()
                     )
                     st.session_state.summary = summary
+                    
+                    # Persist summary + embedding to the vector DB
+                    # (Streamlit runs on the server, so we can call Python directly.)
+                    st.info("Embedding summary and saving to database...")
+                    try:
+                        embedding = embed_text(summary)
+                        insert_summary(
+                            filename=getattr(uploaded_file, "name", None),
+                            duration_sec=duration_sec,
+                            summary_style=summary_style.lower(),
+                            summary_text=summary,
+                            embedding=embedding,
+                        )
+                        st.success("✓ Saved summary to database")
+                    except Exception as e:
+                        # Summary is still usable even if DB insert fails.
+                        st.warning(f"Saved summary, but database insert failed: {e}")
                     st.session_state.processed = True
                     st.success("✓ Summary generated successfully!")
                     
@@ -187,6 +215,31 @@ with col2:
                         )
     else:
         st.info("Upload a video and click 'Generate Summary' to see results here.")
+
+    st.divider()
+    st.header("🔎 Search Similar Videos")
+    query = st.text_input(
+        "Search by keywords",
+        placeholder="e.g. 'sports highlights', 'cooking tutorial', 'machine learning'",
+    )
+    if query and query.strip():
+        with st.spinner("Embedding query and searching..."):
+            query_embedding = embed_text(query.strip())
+            results = search_similar(query_embedding, limit=10)
+
+        if results:
+            st.markdown("### Results")
+            for r in results:
+                filename = r.get("filename") or "Unknown file"
+                summary_text = r.get("summary_text") or ""
+                distance = r.get("distance")
+                st.markdown(f"**{filename}**")
+                if distance is not None:
+                    st.caption(f"Distance: {distance:.4f}")
+                st.write(summary_text)
+                st.divider()
+        else:
+            st.info("No similar summaries found yet. Generate a summary first.")
 
 # Footer
 st.markdown("---")

@@ -2,6 +2,7 @@
 Search video summaries in PostgreSQL with pgvector (cosine similarity).
 Caller is responsible for computing query embeddings (e.g. via embeddings.embedder).
 """
+# query Supabase database for video_summaries
 
 from __future__ import annotations
 

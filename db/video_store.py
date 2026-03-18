@@ -3,7 +3,7 @@ Store video summaries in PostgreSQL with pgvector.
 Search is in db.search_video. Caller is responsible for computing embeddings
 (e.g. via embeddings.embedder).
 """
-
+# write 
 from __future__ import annotations
 
 from db.connection import get_connection

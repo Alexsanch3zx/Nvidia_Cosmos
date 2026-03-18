@@ -11,6 +11,10 @@ A Streamlit application that generates AI-powered summaries of video content usi
 - 💾 Download summaries as text files
 - 🖼️ View sample frames from the analyzed video
 
+## Visual Flow
+
+![Video processing flow](diagrams/flow.png)
+
 ## Installation
 
 ### 1. Clone or download this repository
@@ -94,9 +98,7 @@ Nvidia_COSMOS/
 ├── summarizer.py           # Summary generation logic
 ├── test_setup.py           # Verify setup (imports, GPU, video processor)
 ├── db/
-│   ├── connection.py       # PostgreSQL connection (DATABASE_URL)
-│   ├── init.py             # Create DB + pgvector extension + video_summaries table
-│   ├── schema.sql          # Reference SQL schema
+│   ├── connection.py       # PostgreSQL connection (SUPABASE_DB_URL)
 │   ├── video_store.py      # Insert video summaries with embeddings
 │   └── search_video.py     # Similarity search over summaries
 ├── embeddings/
@@ -109,13 +111,9 @@ Nvidia_COSMOS/
 
 ## Database schema
 
-The app can store video summaries in PostgreSQL with the pgvector extension for similarity search. Set `DATABASE_URL` (e.g. `postgresql://user:pass@localhost:5432/cosmos_videos`) and run once:
+The app can store video summaries in PostgreSQL with the pgvector extension for similarity search.
 
-```bash
-python -m db.init
-```
-
-Schema (from `db/schema.sql`):
+In Supabase, make sure the `vector` extension is enabled and you have a `video_summaries` table with an `embedding` column of dimension `384` (matches `all-MiniLM-L6-v2`).
 
 - **Extension:** `CREATE EXTENSION IF NOT EXISTS vector;`
 - **Table:** `video_summaries`

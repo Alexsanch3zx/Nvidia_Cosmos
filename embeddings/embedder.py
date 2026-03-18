@@ -5,7 +5,10 @@ Output dimension is 384 (all-MiniLM-L6-v2), matching db schema vector(384).
 
 from __future__ import annotations
 
+from functools import lru_cache
 
+#_get_model() will only run once
+@lru_cache(maxsize=1)
 def _get_model():
     """Lazy-load the embedding model so import is fast."""
     from sentence_transformers import SentenceTransformer

@@ -1,4 +1,4 @@
-# How to Implement PostgreSQL + pgvector for Video Summary Search
+# How to Implement Supabase pgvector for Video Summary Search
 
 This guide walks you through adding a vector database so you can store video summaries and run similarity search (e.g. “find videos like this” or “videos about X”). Do each step in order.
 
@@ -13,45 +13,19 @@ This guide walks you through adding a vector database so you can store video sum
 
 ---
 
-## Step 1: Run PostgreSQL with pgvector
+## Step 1: Enable pgvector in Supabase
 
-You need a Postgres instance with the pgvector extension.
-
-**Option A – Docker (simplest)**
-
-1. Install Docker if you don’t have it.
-2. Run a Postgres image that includes pgvector, for example:
-
-   ```bash
-   docker run -d \
-     --name cosmos-pgvector \
-     -e POSTGRES_USER=postgres \
-     -e POSTGRES_PASSWORD=your_password \
-     -e POSTGRES_DB=cosmos_videos \
-     -p 5432:5432 \
-     pgvector/pgvector:pg16
-   ```
-
-3. Replace `your_password` with a real password. The app will connect to `localhost:5432`, database `cosmos_videos`, with this user/password.
-
-**Option B – Local or cloud Postgres**
-
-- Install PostgreSQL 15+ and the pgvector extension for your OS (see [pgvector GitHub](https://github.com/pgvector/pgvector)).
-- Create a database (e.g. `cosmos_videos`) and enable the extension (Step 2).
-
----
-
-## Step 2: Create the database and enable pgvector
-
-Connect to your Postgres (e.g. `psql -U postgres -d cosmos_videos`, or your DB name).
-
-Run:
+Open your Supabase project, then go to the **SQL Editor**, and run:
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-Then create a table that holds one row per video: metadata, summary text, and one vector per summary. Example (adjust types/lengths as you like):
+---
+
+## Step 2: Ensure the `video_summaries` table exists
+
+Create (or verify) a table that holds one row per video: metadata, summary text, and one vector per summary. Example:
 
 ```sql
 CREATE TABLE video_summaries (
@@ -106,12 +80,12 @@ pip install psycopg2-binary pgvector sentence-transformers
 
 ---
 
-## Step 5: Store the database URL in a local file (and keep it out of Git)
+## Step 5: Store the Supabase connection string (and keep it out of Git)
 
-Use a `.env` file in the project root for the connection string. Example:
+Use a `.env` file in the project root for the Supabase connection string. Example:
 
 ```
-DATABASE_URL=postgresql://postgres:your_password@localhost:5432/cosmos_videos
+SUPABASE_DB_URL=postgresql://postgres:your_password@db.YOUR_PROJECT.supabase.co:5432/postgres?sslmode=require
 ```
 
 The project’s `.gitignore` already includes `.env`, so this file will **not** be pushed to the repo. Never commit real passwords or URLs.
@@ -124,7 +98,7 @@ Load `.env` in your app with `python-dotenv` (e.g. `load_dotenv()` at startup) o
 
 In your own code, after you generate the summary (in the same place you currently have the summary string):
 
-1. Connect to Postgres using `DATABASE_URL`.
+1. Connect to Postgres using `SUPABASE_DB_URL` (or whatever your app loads via `db/connection.py`).
 2. Turn the summary string into a vector with your chosen embedding model (same model and dimension as in the table).
 3. Insert one row into `video_summaries`: filename (or path), duration, summary_style, summary_text, embedding. You can get duration from your video processing step; store whatever metadata you want.
 4. Close the connection (or use a connection pool).
@@ -153,7 +127,7 @@ Again, use the pgvector client so you can pass the query vector and read results
 - **After “Generate Summary”:** Optionally or always call your “save summary to DB” logic with the current video’s metadata and the generated summary. You can add a checkbox “Save to library” if you want it optional.
 - **Search UI:** Add a text input and a “Search” button (e.g. in the sidebar or a separate page). On submit, call your similarity-search function and display the returned videos/summaries.
 
-Handle errors (e.g. DB unreachable, missing `DATABASE_URL`) so the app doesn’t crash when the DB isn’t configured.
+Handle errors (e.g. DB unreachable, missing `SUPABASE_DB_URL`) so the app doesn’t crash when the DB isn’t configured.
 
 ---
 
@@ -176,7 +150,7 @@ WITH (lists = 100);
 - [ ] Postgres with pgvector running (Docker or local).
 - [ ] Database created; `CREATE EXTENSION vector` and `video_summaries` table (with correct `vector(N)` dimension).
 - [ ] Embedding model chosen; Python deps installed (Postgres driver, pgvector, embedding library).
-- [ ] `.env` with `DATABASE_URL`; `.env` in `.gitignore` (already done) so it’s not pushed.
+- [ ] `.env` with `SUPABASE_DB_URL`; `.env` in `.gitignore` (already done) so it’s not pushed.
 - [ ] Code: embed summary → insert into `video_summaries` after generating summary.
 - [ ] Code: embed query → similarity query → return top N; show in UI.
 - [ ] Optional: vector index for larger datasets.
