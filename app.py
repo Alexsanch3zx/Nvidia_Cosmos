@@ -222,8 +222,9 @@ with col2:
     st.header("🔎 Search Similar Videos")
     query = st.text_input(
         "Search by keywords",
-        placeholder="e.g. 'sports highlights', 'cooking tutorial', 'machine learning'",
+        placeholder="e.g. 'pedestrian crossing behavior', 'car accident at intersection', 'person loitering near entrance'",
     )
+
     if query and query.strip():
         with st.spinner("Embedding query and searching..."):
             query_embedding = embed_text(query.strip())
