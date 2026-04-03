@@ -5,5 +5,5 @@ source env.sh
 bash setup.sh
 
 echo " Launching app..."
-python 3 -m streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+python3 -m streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 #then run "bash run.sh"
