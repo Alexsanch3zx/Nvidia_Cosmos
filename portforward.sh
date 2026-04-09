@@ -3,7 +3,7 @@
 osascript <<EOF
 tell application "Terminal"
     activate
-    do script "brev port-forward cosmos-videos-gpu-0bec54 -p 8501:8501"
+    do script "brev port-forward cosmos-videos-gpu -p 8501:8501"
 end tell
 EOF
 
