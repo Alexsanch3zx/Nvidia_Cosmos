@@ -9,6 +9,7 @@ accelerate
 numpy
 pgvector
 psycopg2-binary
+supabase
 python-dotenv
 sentence-transformers
 huggingface_hub

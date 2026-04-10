@@ -34,7 +34,8 @@ def search_similar(
 
     Returns:
         List of dicts with keys: id, created_at, filename, duration_sec,
-        summary_style, summary_text, distance (cosine distance; lower = more similar).
+        summary_style, summary_text, storage_bucket, storage_path,
+        distance (cosine distance; lower = more similar).
     """
     conn = None
     try:
@@ -49,7 +50,8 @@ def search_similar(
             cur.execute(
                 """
                 SELECT id, created_at, filename, duration_sec, summary_style,
-                       summary_text, embedding <=> %s AS distance
+                       summary_text, storage_bucket, storage_path,
+                       embedding <=> %s AS distance
                 FROM video_summaries
                 ORDER BY embedding <=> %s
                 LIMIT %s

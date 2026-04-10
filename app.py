@@ -1,6 +1,8 @@
 import streamlit as st
 import tempfile
 import os
+import uuid
+import mimetypes
 from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
@@ -11,6 +13,12 @@ from summarizer import VideoSummarizer
 from embeddings.embedder import embed_text
 from db.video_store import insert_summary
 from db.search_video import search_similar
+from db.storage_upload import (
+    public_object_url,
+    storage_configured,
+    upload_local_file,
+    video_bucket,
+)
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -170,12 +178,38 @@ with col1:
                     st.info("Embedding summary and saving to database...")
                     try:
                         embedding = embed_text(summary)
+                        storage_path_val = None
+                        if storage_configured():
+                            try:
+                                orig_name = getattr(uploaded_file, "name", "") or "video.mp4"
+                                suffix = Path(orig_name).suffix.lower()
+                                if suffix not in (".mp4", ".avi", ".mov", ".mkv"):
+                                    suffix = ".mp4"
+                                storage_path_val = f"uploads/{uuid.uuid4().hex}{suffix}"
+                                ctype, _ = mimetypes.guess_type(orig_name)
+                                upload_local_file(
+                                    video_path,
+                                    storage_path_val,
+                                    content_type=ctype or "video/mp4",
+                                )
+                                st.success("✓ Uploaded video to Supabase Storage")
+                            except Exception as up_e:
+                                st.warning(f"Storage upload skipped or failed: {up_e}")
+                                storage_path_val = None
+                        elif os.getenv("SUPABASE_URL") or os.getenv(
+                            "SUPABASE_SERVICE_ROLE_KEY"
+                        ):
+                            st.caption(
+                                "Set both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to store videos in Storage."
+                            )
                         insert_summary(
                             filename=getattr(uploaded_file, "name", None),
                             duration_sec=duration_sec,
                             summary_style=summary_style.lower(),
                             summary_text=summary,
                             embedding=embedding,
+                            storage_bucket=video_bucket(),
+                            storage_path=storage_path_val,
                         )
                         st.success("✓ Saved summary to database")
                     except Exception as e:
@@ -238,6 +272,11 @@ if search_query and search_query.strip():
             st.markdown(f"**{filename}**")
             if distance is not None:
                 st.caption(f"Distance: {distance:.4f}")
+            path = r.get("storage_path")
+            bkt = r.get("storage_bucket")
+            vid_url = public_object_url(path, bkt) if path else None
+            if vid_url:
+                st.video(vid_url)
             st.write(summary_text)
             st.divider()
     else:

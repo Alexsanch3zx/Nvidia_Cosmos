@@ -13,7 +13,7 @@ A Streamlit application that generates AI-powered summaries of video content usi
 
 ## Visual Flow
 
-![Video processing flow](diagrams/flow.png)
+Video processing flow
 
 ## Installation
 
@@ -47,11 +47,18 @@ Create a `.env` file in the project root:
 
 ```
 SUPABASE_DB_URL=postgresql://<user>:<password>@<host>:5432/<dbname>?sslmode=require
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service_role_secret>
+# Optional if your bucket name is not "video":
+# SUPABASE_VIDEO_BUCKET=video
 LOGIN_USERNAME=your_username
 LOGIN_PASSWORD=your_password
 ```
 
 - `SUPABASE_DB_URL` — your Supabase (or any PostgreSQL) connection string
+- `SUPABASE_URL` — project URL from **Settings → API** (used to upload videos to Storage and build public playback URLs)
+- `SUPABASE_SERVICE_ROLE_KEY` — **service role** key from **Settings → API** (server-only; never expose in the browser). Required for Storage uploads from this app.
+- `SUPABASE_VIDEO_BUCKET` — optional; defaults to `video` (must match your public bucket name)
 - `LOGIN_USERNAME` / `LOGIN_PASSWORD` — credentials for the app login screen
 
 #### `.streamlit/secrets.toml`
@@ -76,6 +83,7 @@ Add one line per user you want to allow. The username and password here must mat
 ### 5. Model Access
 
 Make sure you have access to Nvidia's Cosmos-reason2-8b model. You may need to:
+
 - Accept the model's terms on HuggingFace
 - Log in to HuggingFace: `huggingface-cli login`
 - Or download the model locally and update the model path in `model_handler.py`
@@ -83,11 +91,13 @@ Make sure you have access to Nvidia's Cosmos-reason2-8b model. You may need to:
 ### 5. GPU Setup (Recommended)
 
 For best performance, ensure you have:
+
 - CUDA-compatible GPU
 - Appropriate CUDA drivers installed
 - PyTorch with CUDA support
 
 To verify GPU availability:
+
 ```python
 import torch
 print(torch.cuda.is_available())
@@ -118,6 +128,7 @@ brev shell <gpu-instance-name>
 Replace `<gpu-instance-name>` with your deployment name from step 1. After this, your terminal session is on the Brev GPU machine—clone or `cd` into this repo there before the next steps.
 
 Once in the GPU instance terminal run:
+
 ```bash
 git clone <url>
 cd Nvidia_COSMOS
@@ -165,7 +176,7 @@ chmod +x setup.sh run.sh
 bash setup.sh
 ```
 
-[`setup.sh`](setup.sh) updates packages, installs `python3.10-venv`, creates `venv/`, upgrades `pip`, installs `requirements.txt`, and adds Streamlit / torchvision / accelerate / `huggingface_hub`, plus a pinned `jinja2` version.
+`[setup.sh](setup.sh)` updates packages, installs `python3.10-venv`, creates `venv/`, upgrades `pip`, installs `requirements.txt`, and adds Streamlit / torchvision / accelerate / `huggingface_hub`, plus a pinned `jinja2` version.
 
 ### 6. Run the app (listens on all interfaces)
 
@@ -173,7 +184,7 @@ bash setup.sh
 bash run.sh
 ```
 
-[`run.sh`](run.sh) sources `env.sh`, runs `setup.sh` again, then starts Streamlit with:
+`[run.sh](run.sh)` sources `env.sh`, runs `setup.sh` again, then starts Streamlit with:
 
 `python3 -m streamlit run app.py --server.port 8501 --server.address 0.0.0.0`
 
@@ -189,7 +200,7 @@ brev port-forward <your-deployment-name> -p 8501:8501
 
 Replace `<your-deployment-name>` with your actual Brev deployment name.
 
-On **macOS**, [`portforward.sh`](portforward.sh) opens a new Terminal window and runs a `brev port-forward` command for you. Edit the deployment name inside that script to match yours, then:
+On **macOS**, `[portforward.sh](portforward.sh)` opens a new Terminal window and runs a `brev port-forward` command for you. Edit the deployment name inside that script to match yours, then:
 
 ```bash
 chmod +x portforward.sh
@@ -214,25 +225,22 @@ The application will open in your default web browser at `http://localhost:8501`
 ### Using the Application
 
 1. **Configure Settings** (in sidebar):
-   - Adjust frame sampling interval (1-10 seconds)
-   - Set maximum frames to analyze (5-50)
-   - Choose summary style (Detailed/Concise/Bullet Points)
-
+  - Adjust frame sampling interval (1-10 seconds)
+  - Set maximum frames to analyze (5-50)
+  - Choose summary style (Detailed/Concise/Bullet Points)
 2. **Upload Video**:
-   - Click "Browse files" or drag and drop
-   - Supported formats: MP4, AVI, MOV, MKV
-
+  - Click "Browse files" or drag and drop
+  - Supported formats: MP4, AVI, MOV, MKV
 3. **Generate Summary**:
-   - Click "🚀 Generate Summary"
-   - Wait for processing (3 steps):
-     - Frame extraction
-     - AI analysis
-     - Summary generation
-
+  - Click "🚀 Generate Summary"
+  - Wait for processing (3 steps):
+    - Frame extraction
+    - AI analysis
+    - Summary generation
 4. **Review Results**:
-   - Read the generated summary
-   - Download summary as text file
-   - View sample frames from the video
+  - Read the generated summary
+  - Download summary as text file
+  - View sample frames from the video
 
 ## Project Structure
 
@@ -266,15 +274,17 @@ In Supabase, make sure the `vector` extension is enabled and you have a `video_s
 - **Extension:** `CREATE EXTENSION IF NOT EXISTS vector;`
 - **Table:** `video_summaries`
 
-| Column         | Type           | Description                          |
-|----------------|----------------|--------------------------------------|
-| `id`           | BIGSERIAL      | Primary key                          |
-| `created_at`   | TIMESTAMPTZ    | Default NOW()                        |
-| `filename`     | TEXT           | Original video filename (optional)   |
-| `duration_sec` | NUMERIC(10,2)  | Video duration in seconds (optional) |
-| `summary_style`| TEXT           | e.g. "detailed", "concise"           |
-| `summary_text` | TEXT NOT NULL  | Full summary text                    |
-| `embedding`    | vector(384)    | Embedding for similarity search (all-MiniLM-L6-v2) |
+
+| Column          | Type          | Description                                        |
+| --------------- | ------------- | -------------------------------------------------- |
+| `id`            | BIGSERIAL     | Primary key                                        |
+| `created_at`    | TIMESTAMPTZ   | Default NOW()                                      |
+| `filename`      | TEXT          | Original video filename (optional)                 |
+| `duration_sec`  | NUMERIC(10,2) | Video duration in seconds (optional)               |
+| `summary_style` | TEXT          | e.g. "detailed", "concise"                         |
+| `summary_text`  | TEXT NOT NULL | Full summary text                                  |
+| `embedding`     | vector(384)   | Embedding for similarity search (all-MiniLM-L6-v2) |
+
 
 Optional index for faster search once you have many rows:
 
@@ -291,17 +301,17 @@ WITH (lists = 100);
 The `VideoProcessor` class provides two methods:
 
 1. **Interval-based extraction** (default):
-   - Extracts frames at regular time intervals
-   - Good for consistent sampling
-
+  - Extracts frames at regular time intervals
+  - Good for consistent sampling
 2. **Keyframe extraction**:
-   - Detects scene changes
-   - More intelligent sampling
-   - To use, modify `app.py` to call `extract_keyframes()` instead of `extract_frames()`
+  - Detects scene changes
+  - More intelligent sampling
+  - To use, modify `app.py` to call `extract_keyframes()` instead of `extract_frames()`
 
 ### Model Configuration
 
 In `model_handler.py`, you can adjust:
+
 - `model_name`: HuggingFace model ID or local path
 - `max_new_tokens`: Maximum length of generated descriptions
 - `temperature`: Creativity of responses (0.0-1.0)
@@ -312,6 +322,7 @@ In `model_handler.py`, you can adjust:
 ### Summary Styles
 
 You can modify or add new summary styles in `summarizer.py`:
+
 - `_generate_detailed_summary()`: Narrative format with scenes
 - `_generate_concise_summary()`: Brief overview with key moments
 - `_generate_bullet_summary()`: Point-by-point breakdown
@@ -319,6 +330,7 @@ You can modify or add new summary styles in `summarizer.py`:
 ### Prompts
 
 Customize the prompts sent to the Cosmos model in `model_handler.py`:
+
 - Edit the `prompt` parameter in `analyze_single_frame()`
 - Modify context-aware prompts in `analyze_with_context()`
 
@@ -327,31 +339,37 @@ Customize the prompts sent to the Cosmos model in `model_handler.py`:
 ### Common Issues
 
 **Login fails / "no credentials found"**
+
 - Ensure `.env` exists in the project root with `LOGIN_USERNAME` and `LOGIN_PASSWORD` set
 - Or ensure `.streamlit/secrets.toml` exists with a `[passwords]` section
 - Verify you are running `streamlit run app.py` from the project root — Streamlit looks for `.streamlit/secrets.toml` relative to the working directory
 - On Windows, check the file was saved correctly: `Test-Path ".streamlit\secrets.toml"` should return `True`
 
 **"Missing SUPABASE_DB_URL"**
+
 - Ensure `.env` exists and contains `SUPABASE_DB_URL=...`
 - The `python-dotenv` package must be installed (`pip install -r requirements.txt`)
 
 **"Could not open video file"**
+
 - Ensure the video file is not corrupted
 - Check that the format is supported
 - Try converting to MP4 if issues persist
 
 **"CUDA out of memory"**
+
 - Reduce `max_frames` in the sidebar
 - Increase `frame_interval` to sample fewer frames
 - Use CPU instead (slower but works without GPU)
 
 **"Model not found"**
+
 - Verify you have access to the Cosmos model
 - Check your HuggingFace authentication
 - Ensure the model name in `model_handler.py` is correct
 
 **Slow processing**
+
 - Enable GPU acceleration
 - Reduce number of frames analyzed
 - Use interval-based extraction instead of keyframe detection
@@ -366,12 +384,13 @@ Customize the prompts sent to the Cosmos model in `model_handler.py`:
 ## Future Enhancements
 
 Potential improvements:
-- [ ] Batch processing for multiple frames
-- [ ] Support for live video streams
-- [ ] Audio transcription integration
-- [ ] Multi-language support
-- [ ] Export summaries in multiple formats (PDF, Markdown)
-- [ ] Fine-tuning prompts based on video category
+
+- Batch processing for multiple frames
+- Support for live video streams
+- Audio transcription integration
+- Multi-language support
+- Export summaries in multiple formats (PDF, Markdown)
+- Fine-tuning prompts based on video category
 
 ## License
 
@@ -386,6 +405,8 @@ This project is provided as-is for educational and research purposes.
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section above
 2. Review the Cosmos model documentation
-3. Check Streamlit documentation at https://docs.streamlit.io
+3. Check Streamlit documentation at [https://docs.streamlit.io](https://docs.streamlit.io)
+

@@ -3,8 +3,10 @@ Store video summaries in PostgreSQL with pgvector.
 Search is in db.search_video. Caller is responsible for computing embeddings
 (e.g. via embeddings.embedder).
 """
-# write 
+# write
 from __future__ import annotations
+
+from typing import Any
 
 from db.connection import get_connection
 
@@ -25,6 +27,8 @@ def insert_summary(
     summary_style: str,
     summary_text: str,
     embedding: list[float],
+    storage_bucket: str | None = None,
+    storage_path: str | None = None,
 ) -> int | None:
     """
     Insert a video summary row. Returns the new row id, or None on failure.
@@ -35,9 +39,13 @@ def insert_summary(
         summary_style: e.g. "detailed", "concise", "bullet points".
         summary_text: Full summary text (required).
         embedding: List of 384 floats (must match table vector(384)).
+        storage_bucket: Supabase Storage bucket name (optional; DB may default).
+        storage_path: Object key inside the bucket after upload (optional).
     """
     if not summary_text.strip():
         return None
+
+    bucket = storage_bucket or "video"
 
     conn = None
     try:
@@ -52,8 +60,9 @@ def insert_summary(
             cur.execute(
                 """
                 INSERT INTO video_summaries
-                  (filename, duration_sec, summary_style, summary_text, embedding)
-                VALUES (%s, %s, %s, %s, %s)
+                  (filename, duration_sec, summary_style, summary_text, embedding,
+                   storage_bucket, storage_path)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -62,6 +71,8 @@ def insert_summary(
                     summary_style,
                     summary_text,
                     Vector(embedding),
+                    bucket,
+                    storage_path,
                 ),
             )
             row = cur.fetchone()
