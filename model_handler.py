@@ -1,6 +1,5 @@
-import os
-
 import torch
+import os
 from PIL import Image
 from typing import List, Dict
 from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
@@ -28,13 +27,18 @@ class CosmosModelHandler:
         # Note: Adjust these based on actual Cosmos model requirements
         try:
             print("Loading Cosmos model...")
-            self.processor = AutoProcessor.from_pretrained(self.model_name, trust_remote_code=True)
+            self.processor = AutoProcessor.from_pretrained(
+                self.model_name,
+                trust_remote_code=True,
+                token=os.getenv("HUGGINGFACE_HUB_TOKEN"),
+            )
             self.model = Qwen3VLForConditionalGeneration.from_pretrained(
                 self.model_name,
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
                 device_map="auto" if self.device == "cuda" else None,
                 trust_remote_code=True,
-                attn_implementation="eager"
+                attn_implementation="eager",
+                token=os.getenv("HUGGINGFACE_HUB_TOKEN")
             )
             
             if self.device == "cpu":

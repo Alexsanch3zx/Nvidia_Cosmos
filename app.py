@@ -9,10 +9,11 @@ _APP_DIR = Path(__file__).resolve().parent
 # Load .env next to this file (works even if Streamlit's cwd is elsewhere)
 load_dotenv(_APP_DIR / ".env")
 load_dotenv()
+# Reduces tokenizer/process issues during Streamlit reloads.
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 import cv2
 from video_processor import VideoProcessor
 from mock_vision import mock_analyze_frames
-from model_handler import CosmosModelHandler
 from summarizer import VideoSummarizer
 from ollama_summarizer import summarize_frames_with_ollama
 from summary_store import append_local_summary
@@ -136,7 +137,6 @@ if st.session_state.logged_in:
             f"Local mode (**{st.session_state.username}**) — set **REQUIRE_LOGIN=1** and `LOGIN_*` in `.env` to require a password."
         )
     st.sidebar.divider()
-
 st.sidebar.header("Configuration")
 frame_interval = st.sidebar.slider(
     "Frame Sampling Interval (seconds)",
@@ -179,6 +179,15 @@ if _mock_cosmos:
         "**MOCK_COSMOS** is on — no Hugging Face / no Cosmos weights. "
         "Captions are fake; use this only to test UI + summaries."
     )
+
+st.sidebar.divider()
+st.sidebar.subheader("Search similar videos")
+search_query = st.sidebar.text_input(
+    "Search by keywords",
+    placeholder="e.g. pedestrian crossing",
+    help="Semantic search over saved summaries (sidebar). Results show below.",
+    key="sidebar_search_query",
+)
 
 # Main content area
 col1, col2 = st.columns([1, 1])
@@ -235,6 +244,8 @@ with col1:
                         st.success(f"✓ Mock captions for {len(frame_descriptions)} frames (not real vision)")
                     else:
                         st.info("Step 2/3: Analyzing frames with Cosmos AI...")
+                        from model_handler import CosmosModelHandler
+
                         model_handler = CosmosModelHandler()
                         frame_descriptions = model_handler.analyze_frames(frames)
                         st.success(f"✓ Analyzed {len(frame_descriptions)} frames")
@@ -336,55 +347,50 @@ with col2:
     else:
         st.info("Upload a video and click 'Generate Summary' to see results here.")
 
-    st.divider()
-    st.header("🔎 Search videos (objects & scenes)")
+st.divider()
+st.subheader("Search results")
+if search_query and search_query.strip():
     st.caption(
-        "Uses the same text embeddings as summaries, but indexed over **summary + every frame caption** "
-        "(e.g. *red car*, *kitchen*, *outdoor*). Not pixel-perfect detection — it matches what the vision model wrote."
+        "Uses the same text embeddings as summaries, indexed over **summary + every frame caption**."
     )
     if st.session_state.search_hints:
-        with st.expander("💡 Suggested terms from last run"):
+        with st.expander("Suggested terms from last run"):
             st.write(", ".join(st.session_state.search_hints))
+    q = search_query.strip()
+    with st.spinner("Searching..."):
+        results: list = []
+        if os.getenv("SUPABASE_DB_URL"):
+            try:
+                query_embedding = embed_text(q)
+                results = search_similar(query_embedding, limit=10)
+            except Exception as e:
+                st.warning(f"Database search failed: {e}")
+        else:
+            try:
+                results = search_local_summaries_semantic(q, limit=10)
+            except Exception as e:
+                st.warning(f"Local search failed: {e}")
 
-    query = st.text_input(
-        "Search",
-        placeholder="e.g. red car, cooking, person walking, beach",
-    )
-    if query and query.strip():
-        q = query.strip()
-        with st.spinner("Searching…"):
-            results: list = []
-            if os.getenv("SUPABASE_DB_URL"):
-                try:
-                    query_embedding = embed_text(q)
-                    results = search_similar(query_embedding, limit=10)
-                except Exception as e:
-                    st.warning(f"Database search failed: {e}")
-            else:
-                try:
-                    results = search_local_summaries_semantic(q, limit=10)
-                except Exception as e:
-                    st.warning(f"Local search failed: {e}")
-
-            if results:
-                st.markdown("### Results")
-                for r in results:
-                    filename = r.get("filename") or "Unknown file"
-                    summary_text = r.get("summary_text") or ""
-                    distance = r.get("distance")
-                    sim = r.get("similarity")
-                    st.markdown(f"**{filename}**")
-                    if distance is not None:
-                        st.caption(f"Distance: {distance:.4f} (lower = closer)")
-                    elif sim is not None:
-                        st.caption(f"Similarity: {sim:.4f}")
-                    st.write(summary_text)
-                    st.divider()
-            else:
-                st.info(
-                    "No matches. Process at least one video first, or try a different phrase "
-                    "(search uses captions from Cosmos / mock vision)."
-                )
+    if results:
+        for r in results:
+            filename = r.get("filename") or "Unknown file"
+            summary_text = r.get("summary_text") or ""
+            distance = r.get("distance")
+            sim = r.get("similarity")
+            st.markdown(f"**{filename}**")
+            if distance is not None:
+                st.caption(f"Distance: {distance:.4f} (lower = closer)")
+            elif sim is not None:
+                st.caption(f"Similarity: {sim:.4f}")
+            st.write(summary_text)
+            st.divider()
+    else:
+        st.info(
+            "No matches found yet. Generate a summary first, or try a different phrase "
+            "(search uses captions from Cosmos or mock vision)."
+        )
+else:
+    st.caption("Use the search box in the sidebar to find similar saved summaries.")
 
 # Footer
 st.markdown("---")

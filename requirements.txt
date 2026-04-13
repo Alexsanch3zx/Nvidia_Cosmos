@@ -12,3 +12,5 @@ psycopg2-binary
 python-dotenv
 sentence-transformers
 ollama
+huggingface_hub
+jinja2>=3.1.0
