@@ -21,12 +21,29 @@ def _ensure_vector_registered(conn: Any) -> None:
         pass  # pgvector not installed; raw SQL may still work with cast
 
 
+def _table_columns(conn: Any, table_name: str) -> set[str]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = %s
+            """,
+            (table_name,),
+        )
+        return {row[0] for row in cur.fetchall()}
+
+
 def insert_summary(
     filename: str | None,
     duration_sec: float | None,
     summary_style: str,
     summary_text: str,
     embedding: list[float],
+    summary_engine: str | None = None,
+    vision_model: str | None = None,
+    template_id: str | None = None,
+    search_text: str | None = None,
 ) -> int | None:
     """
     Insert a video summary row. Returns the new row id, or None on failure.
@@ -37,6 +54,10 @@ def insert_summary(
         summary_style: e.g. "detailed", "concise", "bullet points".
         summary_text: Full summary text (required).
         embedding: List of 384 floats (must match table vector(384)).
+        summary_engine: "ollama" / "heuristic" (optional; inserted if column exists).
+        vision_model: Label of vision model used (optional; inserted if column exists).
+        template_id: Summary template version (optional; inserted if column exists).
+        search_text: Text used for semantic search (optional; inserted if column exists).
     """
     if not summary_text.strip():
         return None
@@ -50,21 +71,34 @@ def insert_summary(
 
         from pgvector import Vector
 
+        row_data: dict[str, Any] = {
+            "filename": filename,
+            "duration_sec": duration_sec,
+            "summary_style": summary_style,
+            "summary_text": summary_text,
+            "embedding": Vector(embedding),
+            "summary_engine": summary_engine,
+            "vision_model": vision_model,
+            "template_id": template_id,
+            "search_text": search_text,
+        }
+        supported_cols = _table_columns(conn, "video_summaries")
+        insert_cols = [k for k in row_data.keys() if k in supported_cols]
+        insert_values = [row_data[k] for k in insert_cols]
+        if not insert_cols:
+            return None
+        placeholders = ", ".join(["%s"] * len(insert_cols))
+        cols_sql = ", ".join(insert_cols)
+
         with conn.cursor() as cur:
             cur.execute(
-                """
+                f"""
                 INSERT INTO video_summaries
-                  (filename, duration_sec, summary_style, summary_text, embedding)
-                VALUES (%s, %s, %s, %s, %s)
+                  ({cols_sql})
+                VALUES ({placeholders})
                 RETURNING id
                 """,
-                (
-                    filename,
-                    duration_sec,
-                    summary_style,
-                    summary_text,
-                    Vector(embedding),
-                ),
+                insert_values,
             )
             row = cur.fetchone()
             conn.commit()

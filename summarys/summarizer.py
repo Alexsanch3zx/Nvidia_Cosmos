@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 from typing import List, Dict
 
-from summary_templates import DEFAULT_VISION_MODEL_LABEL, format_heuristic_summary
+from summarys.summary_templates import DEFAULT_VISION_MODEL_LABEL, format_heuristic_summary
 from video_processor import VideoProcessor
 
 
@@ -53,3 +55,4 @@ class VideoSummarizer:
                     topics.add(cleaned)
         
         return list(topics)[:10]  # Return top 10
+

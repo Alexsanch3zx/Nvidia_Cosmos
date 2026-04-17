@@ -77,7 +77,7 @@ def test_summarizer():
     """Test the summarizer module"""
     print("\nTesting Summarizer...")
     try:
-        from summarizer import VideoSummarizer
+        from summarys.summarizer import VideoSummarizer
         summarizer = VideoSummarizer()
         print("✓ VideoSummarizer initialized successfully")
         

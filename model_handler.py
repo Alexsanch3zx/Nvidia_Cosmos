@@ -4,36 +4,29 @@ from PIL import Image
 from typing import List, Dict
 from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
-# Local default: smaller 2B checkpoint (override with env COSMOS_MODEL)
-DEFAULT_COSMOS_MODEL = "nvidia/Cosmos-Reason2-2B"
 
 
 class CosmosModelHandler:
-    """Vision-language captions per frame using NVIDIA Cosmos Reason2 (default: 2B)."""
-
-    def __init__(self, model_name: str | None = None):
+    """Handles interaction with Nvidia's Cosmos-reason2-8b model"""
+    
+    def __init__(self, model_name: str = "nvidia/Cosmos-Reason2-8b"):
         """
-        Initialize the Cosmos model.
-
+        Initialize the Cosmos model
+        
         Args:
-            model_name: HuggingFace model id or local path. Defaults to COSMOS_MODEL env or Cosmos-Reason2-2B.
+            model_name: HuggingFace model identifier or local path
         """
-        _env_model = (os.getenv("COSMOS_MODEL") or "").strip()
-        self.model_name = (model_name or _env_model or DEFAULT_COSMOS_MODEL).strip() or DEFAULT_COSMOS_MODEL
+        self.model_name = model_name
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"Using device: {self.device}; model: {self.model_name}")
+        print(f"Using device: {self.device}")
         
         # Load model and processor
         # Note: Adjust these based on actual Cosmos model requirements
         try:
             print("Loading Cosmos model...")
-            self.processor = AutoProcessor.from_pretrained(
-                self.model_name,
-                trust_remote_code=True,
-                token=os.getenv("HUGGINGFACE_HUB_TOKEN"),
-            )
+            self.processor = AutoProcessor.from_pretrained(model_name, trust_remote_code=True, token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
             self.model = Qwen3VLForConditionalGeneration.from_pretrained(
-                self.model_name,
+                model_name,
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
                 device_map="auto" if self.device == "cuda" else None,
                 trust_remote_code=True,

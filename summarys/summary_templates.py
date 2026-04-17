@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 
 # Bump when you change section names or semantics
 TEMPLATE_ID = "cosmos_summary_v1"
-DEFAULT_VISION_MODEL_LABEL = "Cosmos-Reason2-2B"
+DEFAULT_VISION_MODEL_LABEL = "Cosmos-Reason2-8B"
 
 # Sidebar labels -> internal keys (stored in DB / metadata)
 ANALYSIS_STYLES: list[tuple[str, str]] = [
@@ -62,7 +62,7 @@ Produce a **single markdown document** with **exactly** these section headings (
 - Note approximate coverage using the first and last timestamps in the notes (do not invent calendar dates).
 
 ## Executive summary
-- 4–8 dense sentences: what the footage broadly depicts, primary setting, main actors or objects, and the overall sequence of activity.
+- 4-8 dense sentences: what the footage broadly depicts, primary setting, main actors or objects, and the overall sequence of activity.
 
 ## Detailed chronological account
 - For **each** distinct time segment in the notes, provide a numbered or bulleted subsection with **timestamp** (HH:MM:SS or MM:SS) and a **paragraph** of factual description.
@@ -107,7 +107,7 @@ def ollama_user_prompt(
     style_rules = {
         "bullet_points": (
             "## Overview\n"
-            "One short paragraph (2–3 sentences max) setting context.\n\n"
+            "One short paragraph (2-3 sentences max) setting context.\n\n"
             "## Chronological highlights\n"
             "Prefer bullets: one line per important moment with timestamp. Include as many distinct moments as the notes support.\n\n"
             "## Takeaways\n"
@@ -118,19 +118,19 @@ def ollama_user_prompt(
             "## Overview\n"
             "At most 2 short sentences: what the clip is and the main arc.\n\n"
             "## Chronological highlights\n"
-            "3–6 bullets with timestamps; merge redundant adjacent frames.\n\n"
+            "3-6 bullets with timestamps; merge redundant adjacent frames.\n\n"
             "## Takeaways\n"
-            "1–3 bullets: only the essentials.",
+            "1-3 bullets: only the essentials.",
             "Tone: brief and neutral; no filler.",
         ),
         "formal": (
             "## Overview\n"
-            "2–4 complete sentences in a neutral, professional register (third person, no slang, no contractions). Summarize scope and purpose of the footage.\n\n"
+            "2-4 complete sentences in a neutral, professional register (third person, no slang, no contractions). Summarize scope and purpose of the footage.\n\n"
             "## Chronological highlights\n"
-            "5–10 bullets with timestamps; each bullet a full clause in formal language suitable for a report or memo.\n\n"
+            "5-10 bullets with timestamps; each bullet a full clause in formal language suitable for a report or memo.\n\n"
             "## Takeaways\n"
-            "2–5 formal bullet points; suitable for stakeholders or documentation.",
-            "Tone: formal report — clear, impersonal, precise.",
+            "2-5 formal bullet points; suitable for stakeholders or documentation.",
+            "Tone: formal report - clear, impersonal, precise.",
         ),
     }
     structure_text, tone_rule = style_rules.get(
@@ -186,7 +186,7 @@ def _format_heuristic_municipal_report(
     for i, fd in enumerate(frame_descriptions):
         ts = format_timestamp(timestamps[i]) if i < len(timestamps) else "?"
         desc = (fd.get("description") or "").strip()
-        lines.append(f"1. **{ts}** — {desc}")
+        lines.append(f"1. **{ts}** - {desc}")
     lines.append("")
     lines.append("## Persons, vehicles, objects, and environment")
     topics = extract_keywords_from_frames(frame_descriptions)
@@ -202,7 +202,7 @@ def _format_heuristic_municipal_report(
         "- Identity, intent, and off-camera events are not established."
     )
     lines.append("")
-    lines.append(f"_Template `{TEMPLATE_ID}` — heuristic municipal layout._")
+    lines.append(f"_Template `{TEMPLATE_ID}` - heuristic municipal layout._")
     return "\n".join(lines)
 
 
@@ -237,8 +237,8 @@ def format_heuristic_summary(
     lines.append("## Overview")
     if style_key == "concise":
         lines.append(
-            f"The clip runs through **{dur}** (sampled frames). It begins with: {first[:280]}{'…' if len(first) > 280 else ''} "
-            f"It ends with: {last[:280]}{'…' if len(last) > 280 else ''}"
+            f"The clip runs through **{dur}** (sampled frames). It begins with: {first[:280]}{'...' if len(first) > 280 else ''} "
+            f"It ends with: {last[:280]}{'...' if len(last) > 280 else ''}"
         )
     elif style_key == "formal":
         lines.append(
@@ -249,8 +249,8 @@ def format_heuristic_summary(
     else:
         # bullet_points: short context paragraph
         lines.append(
-            f"**Duration (sampled):** {dur}. **Start:** {first[:350]}{'…' if len(first) > 350 else ''} "
-            f"**End:** {last[:350]}{'…' if len(last) > 350 else ''}"
+            f"**Duration (sampled):** {dur}. **Start:** {first[:350]}{'...' if len(first) > 350 else ''} "
+            f"**End:** {last[:350]}{'...' if len(last) > 350 else ''}"
         )
     lines.append("")
 
@@ -265,7 +265,7 @@ def format_heuristic_summary(
     for i in range(0, len(frame_descriptions), step):
         ts = format_timestamp(timestamps[i]) if i < len(timestamps) else "?"
         desc = (frame_descriptions[i].get("description") or "").strip()
-        short = desc if len(desc) <= 400 else desc[:397] + "…"
+        short = desc if len(desc) <= 400 else desc[:397] + "..."
         lines.append(f"- **[{ts}]** {short}")
     lines.append("")
 
@@ -335,3 +335,4 @@ def record_for_storage(
 
 def jsonl_dumps(record: dict[str, Any]) -> str:
     return json.dumps(record, ensure_ascii=False) + "\n"
+

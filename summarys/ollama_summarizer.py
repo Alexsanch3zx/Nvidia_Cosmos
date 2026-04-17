@@ -4,18 +4,18 @@ Turn Cosmos per-frame captions into a structured summary via a local Ollama mode
 Uses prompts from ``summary_templates`` (including the long municipal / incident-record style).
 
 Environment variables:
-  OLLAMA_HOST — optional API base
-  OLLAMA_MODEL — model name (default llama3.2)
-  OLLAMA_NUM_PREDICT — max new tokens (optional)
-  OLLAMA_NUM_PREDICT_MUNICIPAL — override for ``municipal_report`` style (default 8192)
-  COSMOS_MODEL_LABEL — label embedded in prompts
+  OLLAMA_HOST - optional API base
+  OLLAMA_MODEL - model name (default llama3.2)
+  OLLAMA_NUM_PREDICT - max new tokens (optional)
+  OLLAMA_NUM_PREDICT_MUNICIPAL - override for ``municipal_report`` style (default 8192)
+  COSMOS_MODEL_LABEL - label embedded in prompts
 """
 from __future__ import annotations
 
 import os
 from typing import Callable, Dict, List
 
-from summary_templates import (
+from summarys.summary_templates import (
     DEFAULT_VISION_MODEL_LABEL,
     metadata_line,
     ollama_user_prompt,
@@ -87,3 +87,4 @@ def summarize_frames_with_ollama(
 
     header = metadata_line(style, "ollama", vision)
     return f"{header}\n\n{body}"
+
