@@ -24,5 +24,4 @@ Write-Host "Descargando nvidia/Cosmos-Reason2-2B hacia $dest (varios GB, puede t
 
 Write-Host ""
 Write-Host "Listo. En .env pon:"
-Write-Host "MOCK_COSMOS=0"
 Write-Host "COSMOS_MODEL=$($dest -replace '\\','/')"

@@ -1,7 +1,7 @@
 """
-Canonical summarization layout for all video summaries (heuristic + Ollama).
+Canonical summarization layout for video summaries (deterministic / heuristic).
 
-Every stored summary uses the same markdown skeleton so DB rows and local files stay consistent.
+Every stored summary uses the same markdown skeleton so DB rows stay consistent.
 """
 from __future__ import annotations
 
@@ -43,47 +43,21 @@ def metadata_line(
 
 
 def _ollama_municipal_report_prompt(transcript: str, vision_model: str) -> str:
-    """
-    Long-form English narrative suitable for municipal records / incident-style documentation.
-    """
-    return f"""You are drafting an official **field observation record** for municipal or public-safety use, based solely on timestamped visual descriptions from an automated vision system ({vision_model}).
+    return f"""You are drafting an official field observation record from timestamped visual descriptions produced by {vision_model}.
 
-Write in **English**, **past tense**, **third person** ("The recording showed…", "Personnel observed…"). Be exhaustive: this document may be filed, reviewed, or shared with city staff. Do **not** speculate beyond the notes. If something is unclear, state "Not clearly discernible from the provided frame notes."
+Use only facts supported by the notes below.
 
-**RAW FRAME NOTES (only source of truth):**
+Frame notes:
 {transcript}
 
----
-
-Produce a **single markdown document** with **exactly** these section headings (use `##` for each):
-
+Write markdown with these sections:
 ## Record identification
-- State that the record is derived from sampled video frames analyzed by {vision_model}.
-- Note approximate coverage using the first and last timestamps in the notes (do not invent calendar dates).
-
 ## Executive summary
-- 4-8 dense sentences: what the footage broadly depicts, primary setting, main actors or objects, and the overall sequence of activity.
-
 ## Detailed chronological account
-- For **each** distinct time segment in the notes, provide a numbered or bulleted subsection with **timestamp** (HH:MM:SS or MM:SS) and a **paragraph** of factual description.
-- Merge only when two adjacent notes describe the same moment; otherwise keep temporal resolution.
-
 ## Persons, vehicles, objects, and environment
-- Sub-bullets listing what was described: people, clothing or posture if noted, vehicles, fixed objects, weather/lighting if mentioned, structures, signage if visible in text.
-
 ## Actions and sequence of events
-- Narrative paragraph(s) describing what happened in order, suitable for a supervisor or clerk.
-
 ## Uncertainties, occlusions, and limitations
-- Explicitly list what the frame notes do **not** establish (identity, intent, audio, off-camera events, exact counts if ambiguous).
-
 ## Administrative closing
-- One short paragraph: suitable for filing with municipal records; state that content is limited to visual descriptions from the vision system and not eyewitness testimony.
-
-Rules:
-- Do not invent names, license plates, addresses, or legal conclusions.
-- Quote or paraphrase the frame notes closely; prefer precision over creativity.
-- Minimum total length: aim for thorough coverage (typically several hundred words unless the notes are trivial).
 """
 
 
@@ -92,51 +66,9 @@ def ollama_user_prompt(
     style: str,
     vision_model: str = DEFAULT_VISION_MODEL_LABEL,
 ) -> str:
-    """
-    Build the user message for Ollama. Municipal report uses a dedicated long-form English template.
-    """
     style_key = (style or "formal").lower().strip().replace(" ", "_")
-    if style_key == "bulletpoints":
-        style_key = "bullet_points"
-    if style_key in ("detailed", "deep"):
-        style_key = "formal"
-
     if style_key == "municipal_report":
         return _ollama_municipal_report_prompt(transcript, vision_model)
-
-    style_rules = {
-        "bullet_points": (
-            "## Overview\n"
-            "One short paragraph (2-3 sentences max) setting context.\n\n"
-            "## Chronological highlights\n"
-            "Prefer bullets: one line per important moment with timestamp. Include as many distinct moments as the notes support.\n\n"
-            "## Takeaways\n"
-            "Bullet list only; each line one clear takeaway.",
-            "Tone: direct and scannable. Prefer bullets over prose outside Overview.",
-        ),
-        "concise": (
-            "## Overview\n"
-            "At most 2 short sentences: what the clip is and the main arc.\n\n"
-            "## Chronological highlights\n"
-            "3-6 bullets with timestamps; merge redundant adjacent frames.\n\n"
-            "## Takeaways\n"
-            "1-3 bullets: only the essentials.",
-            "Tone: brief and neutral; no filler.",
-        ),
-        "formal": (
-            "## Overview\n"
-            "2-4 complete sentences in a neutral, professional register (third person, no slang, no contractions). Summarize scope and purpose of the footage.\n\n"
-            "## Chronological highlights\n"
-            "5-10 bullets with timestamps; each bullet a full clause in formal language suitable for a report or memo.\n\n"
-            "## Takeaways\n"
-            "2-5 formal bullet points; suitable for stakeholders or documentation.",
-            "Tone: formal report - clear, impersonal, precise.",
-        ),
-    }
-    structure_text, tone_rule = style_rules.get(
-        style_key,
-        style_rules["formal"],
-    )
 
     return f"""You turn timestamped frame descriptions into a structured video summary.
 
@@ -145,13 +77,12 @@ Vision captions came from {vision_model}. Use ONLY information supported by the 
 Frame notes:
 {transcript}
 
-Output MUST use this exact markdown shape (these three headings, in order). Match the language of the frame notes unless they are mixed, then use English.
+Output MUST use this markdown shape:
+## Overview
+## Chronological highlights
+## Takeaways
 
-{structure_text}
-
-Rules:
-- Do not invent objects, people, or events missing from the frame notes.
-- {tone_rule}
+Keep wording concise and factual. No speculation.
 """
 
 
@@ -162,7 +93,7 @@ def _format_heuristic_municipal_report(
     vision_model: str,
     style_key: str,
 ) -> str:
-    """English municipal-style layout without LLM (less detailed than Ollama municipal prompt)."""
+    """English municipal-style layout without an external LLM."""
     lines: List[str] = [metadata_line(style_key, "heuristic", vision_model), ""]
     first_ts = format_timestamp(timestamps[0]) if timestamps else "unknown"
     last_ts = format_timestamp(timestamps[-1]) if timestamps else "unknown"
@@ -179,7 +110,7 @@ def _format_heuristic_municipal_report(
     lines.append(
         f"The footage documents the following initial observation: {first} "
         f"The sequence concludes with: {last} "
-        "This heuristic summary is a condensed placeholder; use the **Ollama** engine with **Municipal report** for a full narrative."
+        "This is a condensed municipal-style layout from frame captions only."
     )
     lines.append("")
     lines.append("## Detailed chronological account")
@@ -213,7 +144,7 @@ def format_heuristic_summary(
     format_timestamp,
     vision_model: str = DEFAULT_VISION_MODEL_LABEL,
 ) -> str:
-    """Deterministic summary; municipal report uses an English incident-record style (heuristic = shallow vs Ollama)."""
+    """Deterministic summary; municipal report uses an English incident-record style."""
     if not frame_descriptions:
         return metadata_line(style, "heuristic", vision_model) + "\n\n_No content to summarize._"
 

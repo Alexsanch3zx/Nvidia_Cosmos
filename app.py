@@ -8,7 +8,6 @@ import cv2
 from video_processor import VideoProcessor
 from model_handler import CosmosModelHandler
 from summarys.ollama_summarizer import summarize_frames_with_ollama
-from summarys import summarizer
 from embeddings.embedder import embed_text
 from db.video_store import insert_summary
 from db.search_video import search_similar
@@ -165,20 +164,11 @@ with col1:
                     # Step 3: Generate summary
                     st.info("Step 3/3: Generating video summary...")
                     style_key = style_key_from_label(summary_style)
-                    try:
-                        summary = summarize_frames_with_ollama(
-                            frame_descriptions,
-                            timestamps,
-                            style=style_key,
-                        )
-                    except Exception as e:
-                        # Keep the pipeline usable even when Ollama is unavailable/misconfigured.
-                        st.warning(f"Ollama summarization failed ({e}); using heuristic fallback.")
-                        summary = summarizer.VideoSummarizer().generate_summary(
-                            frame_descriptions,
-                            timestamps,
-                            style=style_key,
-                        )
+                    summary = summarize_frames_with_ollama(
+                        frame_descriptions,
+                        timestamps,
+                        style=style_key,
+                    )
                     st.session_state.summary = summary
                     
                     # Persist summary + embedding to the vector DB

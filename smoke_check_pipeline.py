@@ -3,7 +3,7 @@
 Single-file smoke checks for current summary/storage wiring.
 
 What this validates:
-1) app.py is routed to ollama_summarizer (not old VideoSummarizer path)
+1) app.py uses summarys.ollama_summarizer for summaries
 2) summary_templates defaults + metadata parsing behave as expected
 3) vision_search search text builder works
 4) db.video_store.insert_summary works with:
@@ -41,13 +41,13 @@ def check_app_routing() -> None:
         fail("app.py is not importing summarize_frames_with_ollama")
     if "summarize_frames_with_ollama(" not in text:
         fail("app.py is not calling summarize_frames_with_ollama")
-    if re.search(r"from\s+summarys\.summarizer\s+import\s+VideoSummarizer", text):
-        fail("app.py still imports old VideoSummarizer")
     if "style_key_from_label(summary_style)" not in text:
         fail("app.py is not normalizing style label via style_key_from_label")
     if "build_search_text(summary, frame_descriptions)" not in text:
         fail("app.py is not building search_text for embedding/storage")
-    ok("app.py routed to Ollama summarizer + template-aware storage inputs")
+    if 'summary_engine="ollama"' not in text:
+        fail("app.py is not marking stored summaries as ollama engine")
+    ok("app.py uses Ollama summarizer + template-aware storage inputs")
 
 
 def check_templates_and_search_text() -> None:

@@ -8,7 +8,7 @@ from video_processor import VideoProcessor
 
 
 class VideoSummarizer:
-    """Structured summaries from frame descriptions (same template as Ollama path)."""
+    """Structured summaries from frame descriptions (deterministic templates)."""
 
     def __init__(self, vision_model: str | None = None):
         self.processor = VideoProcessor()

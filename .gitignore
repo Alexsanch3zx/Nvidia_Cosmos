@@ -44,7 +44,7 @@ testing/
 data/uploads/*
 !data/uploads/.gitkeep
 
-# Local summary JSONL (optional SAVE_SUMMARIES_LOCAL)
+# Optional local summary JSONL exports
 data/summaries/*.jsonl
 !data/summaries/.gitkeep
 

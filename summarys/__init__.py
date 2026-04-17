@@ -1,2 +1,2 @@
-"""Summary generation package (templates + Ollama + heuristic fallback)."""
+"""Summary generation package (templates + heuristic summarizer)."""
 
