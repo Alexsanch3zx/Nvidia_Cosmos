@@ -7,10 +7,16 @@ load_dotenv()
 import cv2
 from video_processor import VideoProcessor
 from model_handler import CosmosModelHandler
-from summarizer import VideoSummarizer
+from summarys.ollama_summarizer import summarize_frames_with_ollama
 from embeddings.embedder import embed_text
 from db.video_store import insert_summary
 from db.search_video import search_similar
+from summarys.summary_templates import (
+    DEFAULT_VISION_MODEL_LABEL,
+    parse_template_id_from_summary,
+    style_key_from_label,
+)
+from vision_search import build_search_text
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -157,11 +163,11 @@ with col1:
                     
                     # Step 3: Generate summary
                     st.info("Step 3/3: Generating video summary...")
-                    summarizer = VideoSummarizer()
-                    summary = summarizer.generate_summary(
+                    style_key = style_key_from_label(summary_style)
+                    summary = summarize_frames_with_ollama(
                         frame_descriptions,
                         timestamps,
-                        style=summary_style.lower()
+                        style=style_key,
                     )
                     st.session_state.summary = summary
                     
@@ -169,13 +175,18 @@ with col1:
                     # (Streamlit runs on the server, so we can call Python directly.)
                     st.info("Embedding summary and saving to database...")
                     try:
-                        embedding = embed_text(summary)
+                        search_text = build_search_text(summary, frame_descriptions)
+                        embedding = embed_text(search_text)
                         insert_summary(
                             filename=getattr(uploaded_file, "name", None),
                             duration_sec=duration_sec,
-                            summary_style=summary_style.lower(),
+                            summary_style=style_key,
                             summary_text=summary,
                             embedding=embedding,
+                            summary_engine="ollama",
+                            vision_model=os.getenv("COSMOS_MODEL_LABEL", DEFAULT_VISION_MODEL_LABEL),
+                            template_id=parse_template_id_from_summary(summary),
+                            search_text=search_text,
                         )
                         st.success("✓ Saved summary to database")
                     except Exception as e:

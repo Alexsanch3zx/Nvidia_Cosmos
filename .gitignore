@@ -40,6 +40,16 @@ google-embedder/
 
 testing/
 
+# Local uploaded videos (optional SAVE_UPLOADED_VIDEOS)
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Optional local summary JSONL exports
+data/summaries/*.jsonl
+!data/summaries/.gitkeep
+
+# Downloaded HF weights (local Cosmos model)
+models/
 tokens.txt
 
 dependencies.txt

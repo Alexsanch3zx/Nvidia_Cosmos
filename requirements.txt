@@ -1,15 +1,11 @@
---extra-index-url https://download.pytorch.org/whl/cu130
 streamlit
 opencv-python
 pillow
-torch
-torchvision
-transformers>=4.51.0
-accelerate
+requests
 numpy
 pgvector
 psycopg2-binary
 python-dotenv
 sentence-transformers
-huggingface_hub
+ollama
 jinja2>=3.1.0
