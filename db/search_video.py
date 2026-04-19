@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from db.connection import get_connection
+from db.video_store import _table_columns
 
 
 def _ensure_vector_registered(conn: Any) -> None:
@@ -47,7 +48,8 @@ def search_similar(
 
     Returns:
         List of dicts with keys: id, created_at, filename, duration_sec,
-        summary_style, summary_text, distance (cosine distance; lower = more similar).
+        summary_style, summary_text, distance (cosine distance; lower = more similar),
+        and storage_object_path when that column exists on the table.
     """
     conn = None
     try:
@@ -58,11 +60,23 @@ def search_similar(
 
         from pgvector import Vector
 
+        supported = _table_columns(conn, "video_summaries")
+        select_cols = [
+            "id",
+            "created_at",
+            "filename",
+            "duration_sec",
+            "summary_style",
+            "summary_text",
+        ]
+        if "storage_object_path" in supported:
+            select_cols.append("storage_object_path")
+        col_sql = ", ".join(select_cols)
+
         with conn.cursor() as cur:
             cur.execute(
-                """
-                SELECT id, created_at, filename, duration_sec, summary_style,
-                       summary_text, embedding <=> %s AS distance
+                f"""
+                SELECT {col_sql}, embedding <=> %s AS distance
                 FROM video_summaries
                 WHERE embedding IS NOT NULL
                 ORDER BY embedding <=> %s

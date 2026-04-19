@@ -44,6 +44,7 @@ def insert_summary(
     vision_model: str | None = None,
     template_id: str | None = None,
     search_text: str | None = None,
+    storage_object_path: str | None = None,
 ) -> int | None:
     """
     Insert a video summary row. Returns the new row id, or None on failure.
@@ -58,6 +59,7 @@ def insert_summary(
         vision_model: Label of vision model used (optional; inserted if column exists).
         template_id: Summary template version (optional; inserted if column exists).
         search_text: Text used for semantic search (optional; inserted if column exists).
+        storage_object_path: Path inside the Supabase Storage bucket (optional).
     """
     if not summary_text.strip():
         return None
@@ -81,6 +83,7 @@ def insert_summary(
             "vision_model": vision_model,
             "template_id": template_id,
             "search_text": search_text,
+            "storage_object_path": storage_object_path,
         }
         supported_cols = _table_columns(conn, "video_summaries")
         insert_cols = [k for k in row_data.keys() if k in supported_cols]

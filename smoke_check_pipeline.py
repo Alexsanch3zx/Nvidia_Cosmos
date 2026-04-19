@@ -8,7 +8,8 @@ What this validates:
 3) vision_search search text builder works
 4) db.video_store.insert_summary works with:
    - old schema (minimal columns)
-   - new schema (template-aware optional columns)
+   - new schema (template-aware + storage_object_path when present)
+5) pages/2_Semantic_search.py wires semantic search + video URL display
 
 Run:
   python smoke_check_pipeline.py
@@ -47,8 +48,16 @@ def check_app_routing() -> None:
         fail("app.py is not building search_text for embedding/storage")
     if 'summary_engine="ollama"' not in text:
         fail("app.py is not marking stored summaries as ollama engine")
-    if "search_similar_by_text" not in text:
-        fail("app.py is not using search_similar_by_text for semantic search")
+    if "upload_local_file_to_video_bucket" not in text:
+        fail("app.py is not uploading videos to Supabase Storage when configured")
+    if "storage_object_path=storage_object_path" not in text:
+        fail("app.py is not passing storage_object_path into insert_summary")
+    page = ROOT / "pages" / "2_Semantic_search.py"
+    if not page.is_file():
+        fail("missing pages/2_Semantic_search.py")
+    ptext = page.read_text(encoding="utf-8")
+    if "search_similar_by_text" not in ptext:
+        fail("semantic search page is not calling search_similar_by_text")
     ok("app.py uses Ollama summarizer + template-aware storage inputs")
 
 
@@ -184,8 +193,14 @@ def check_video_store_insert_schemas() -> None:
             fail("old schema insert unexpectedly included template-aware columns")
         ok("db insert works with old schema")
 
-        # Case B: new schema
-        new_cols = old_cols | {"summary_engine", "vision_model", "template_id", "search_text"}
+        # Case B: new schema (metadata + storage path)
+        new_cols = old_cols | {
+            "summary_engine",
+            "vision_model",
+            "template_id",
+            "search_text",
+            "storage_object_path",
+        }
         new_conn = FakeConnection(new_cols, next_id=202)
         video_store.get_connection = lambda: new_conn  # type: ignore[assignment]
         row_id = video_store.insert_summary(
@@ -198,14 +213,15 @@ def check_video_store_insert_schemas() -> None:
             vision_model="Cosmos-Reason2-8B",
             template_id="cosmos_summary_v1",
             search_text="world captions",
+            storage_object_path="alice/uuid_clip2.mp4",
         )
         if row_id != 202:
             fail("insert_summary failed for new schema")
         insert_sql = next(sql for sql, _ in new_conn.executed if "INSERT INTO video_summaries" in sql)
         used_cols = set(_extract_insert_columns(insert_sql))
-        required = {"summary_engine", "vision_model", "template_id", "search_text"}
+        required = {"summary_engine", "vision_model", "template_id", "search_text", "storage_object_path"}
         if not required.issubset(used_cols):
-            fail("new schema insert did not include all template-aware columns")
+            fail("new schema insert did not include all template-aware + storage columns")
         ok("db insert uses template-aware fields when schema supports them")
 
     finally:
