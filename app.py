@@ -10,7 +10,7 @@ from model_handler import CosmosModelHandler
 from summarys.ollama_summarizer import summarize_frames_with_ollama
 from embeddings.embedder import embed_text
 from db.video_store import insert_summary
-from db.search_video import search_similar
+from db.search_video import search_similar_by_text
 from summarys.summary_templates import (
     DEFAULT_VISION_MODEL_LABEL,
     parse_template_id_from_summary,
@@ -107,9 +107,9 @@ summary_style = st.sidebar.selectbox(
 st.sidebar.divider()
 st.sidebar.subheader("Search similar videos")
 search_query = st.sidebar.text_input(
-    "Search by keywords",
-    placeholder="e.g. pedestrian crossing",
-    help="Semantic search over saved summaries (sidebar). Results show below.",
+    "Find similar videos (by meaning)",
+    placeholder='e.g. red light violation with pedestrian in crosswalk',
+    help="Natural-language search: matches against embeddings from saved summaries (and frame captions used when saving).",
     key="sidebar_search_query",
 )
 
@@ -237,24 +237,30 @@ with col2:
 st.divider()
 st.subheader("Search results")
 if search_query and search_query.strip():
-    with st.spinner("Embedding query and searching..."):
-        query_embedding = embed_text(search_query.strip())
-        results = search_similar(query_embedding, limit=10)
+    search_failed = False
+    try:
+        with st.spinner("Embedding query and searching saved videos..."):
+            results = search_similar_by_text(search_query, limit=10)
+    except Exception as e:
+        search_failed = True
+        results = []
+        st.error(f"Search failed (check database URL and pgvector): {e}")
 
     if results:
-        for r in results:
+        st.caption("Lower distance = closer match in embedding space (same model as when saving).")
+        for i, r in enumerate(results, start=1):
             filename = r.get("filename") or "Unknown file"
             summary_text = r.get("summary_text") or ""
             distance = r.get("distance")
-            st.markdown(f"**{filename}**")
+            st.markdown(f"**{i}. {filename}**")
             if distance is not None:
-                st.caption(f"Distance: {distance:.4f}")
+                st.caption(f"Cosine distance: {distance:.4f}")
             st.write(summary_text)
             st.divider()
-    else:
-        st.info("No similar summaries found yet. Generate a summary first.")
+    elif not search_failed:
+        st.info("No saved rows matched. Add summaries to the database first, then try again.")
 else:
-    st.caption("Use the search box in the sidebar to find similar saved summaries.")
+    st.caption("Use the sidebar search to describe an incident in plain language; similar saved videos appear here.")
 
 # Footer
 st.markdown("---")

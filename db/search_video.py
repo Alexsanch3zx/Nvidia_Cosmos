@@ -21,6 +21,19 @@ def _ensure_vector_registered(conn: Any) -> None:
         pass  # pgvector not installed; raw SQL may still work with cast
 
 
+def search_similar_by_text(query: str, limit: int = 10) -> list[dict[str, Any]]:
+    """
+    Embed a natural-language query with the same model as stored rows, then
+    return the closest summaries by cosine distance (see search_similar).
+    """
+    from embeddings.embedder import embed_text
+
+    q = (query or "").strip()
+    if not q:
+        return []
+    return search_similar(embed_text(q), limit=limit)
+
+
 def search_similar(
     query_embedding: list[float],
     limit: int = 10,
@@ -51,6 +64,7 @@ def search_similar(
                 SELECT id, created_at, filename, duration_sec, summary_style,
                        summary_text, embedding <=> %s AS distance
                 FROM video_summaries
+                WHERE embedding IS NOT NULL
                 ORDER BY embedding <=> %s
                 LIMIT %s
                 """,

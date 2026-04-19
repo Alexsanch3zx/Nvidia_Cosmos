@@ -47,6 +47,8 @@ def check_app_routing() -> None:
         fail("app.py is not building search_text for embedding/storage")
     if 'summary_engine="ollama"' not in text:
         fail("app.py is not marking stored summaries as ollama engine")
+    if "search_similar_by_text" not in text:
+        fail("app.py is not using search_similar_by_text for semantic search")
     ok("app.py uses Ollama summarizer + template-aware storage inputs")
 
 
