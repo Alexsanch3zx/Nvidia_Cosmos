@@ -244,7 +244,7 @@ Nvidia_COSMOS/
 ├── app.py                  # Main Streamlit application
 ├── video_processor.py      # Frame extraction and video processing
 ├── model_handler.py        # Cosmos model interface
-├── summarys/               # Ollama summarizer + templates
+├── summarys/               # Gemma summarizer + templates
 ├── test_setup.py           # Verify setup (imports, GPU, video processor)
 ├── db/
 │   ├── connection.py       # PostgreSQL connection (SUPABASE_DB_URL)
@@ -314,7 +314,7 @@ In `model_handler.py`, you can adjust:
 
 ### Summary Styles
 
-You can adjust summary prompts in `summarys/summary_templates.py` (Ollama user prompts) and `summarys/ollama_summarizer.py`.
+You can adjust summary prompts in `summarys/summary_templates.py` (summary user prompts) and `summarys/gemma_summarizer.py`.
 
 ### Prompts
 

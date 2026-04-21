@@ -7,5 +7,5 @@ pgvector
 psycopg2-binary
 python-dotenv
 sentence-transformers
-ollama
+openai
 jinja2>=3.1.0

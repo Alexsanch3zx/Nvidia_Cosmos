@@ -73,16 +73,16 @@ def test_model_handler():
         print(f"✗ ModelHandler error: {e}")
         return False
 
-def test_ollama_summarizer_module():
-    """Ensure Ollama summarizer module imports (no network call)."""
-    print("\nTesting Ollama summarizer module...")
+def test_gemma_summarizer_module():
+    """Ensure Gemma summarizer module imports (no network call)."""
+    print("\nTesting Gemma summarizer module...")
     try:
-        from summarys.ollama_summarizer import summarize_frames_with_ollama  # noqa: F401
-        assert callable(summarize_frames_with_ollama)
-        print("✓ summarys.ollama_summarizer import OK")
+        from summarys.gemma_summarizer import summarize_frames_with_gemma  # noqa: F401
+        assert callable(summarize_frames_with_gemma)
+        print("✓ summarys.gemma_summarizer import OK")
         return True
     except Exception as e:
-        print(f"✗ Ollama summarizer import error: {e}")
+        print(f"✗ Gemma summarizer import error: {e}")
         return False
 
 def test_create_dummy_image():
@@ -109,7 +109,7 @@ def main():
         "GPU": test_gpu(),
         "VideoProcessor": test_video_processor(),
         "ModelHandler": test_model_handler(),
-        "Ollama summarizer": test_ollama_summarizer_module(),
+        "Gemma summarizer": test_gemma_summarizer_module(),
         "Image Handling": test_create_dummy_image(),
     }
     

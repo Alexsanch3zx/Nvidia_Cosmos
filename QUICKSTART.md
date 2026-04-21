@@ -89,7 +89,7 @@ Once your setup is working:
 - `app.py` - Main Streamlit interface
 - `video_processor.py` - Extracts frames from videos
 - `model_handler.py` - Interfaces with Cosmos model
-- `summarys/ollama_summarizer.py` - Ollama summary generation
+- `summarys/gemma_summarizer.py` - Gemma summary generation
 - `test_setup.py` - Verifies installation
 - `requirements.txt` - Python dependencies
 - `README.md` - Full documentation

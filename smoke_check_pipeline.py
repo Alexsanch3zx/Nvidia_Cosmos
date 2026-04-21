@@ -3,7 +3,7 @@
 Single-file smoke checks for current summary/storage wiring.
 
 What this validates:
-1) app.py uses summarys.ollama_summarizer for summaries
+1) app.py uses summarys.gemma_summarizer for summaries
 2) summary_templates defaults + metadata parsing behave as expected
 3) vision_search search text builder works
 4) db.video_store.insert_summary works with:
@@ -38,16 +38,16 @@ def check_app_routing() -> None:
     app_path = ROOT / "app.py"
     text = app_path.read_text(encoding="utf-8")
 
-    if "from summarys.ollama_summarizer import summarize_frames_with_ollama" not in text:
-        fail("app.py is not importing summarize_frames_with_ollama")
-    if "summarize_frames_with_ollama(" not in text:
-        fail("app.py is not calling summarize_frames_with_ollama")
+    if "from summarys.gemma_summarizer import summarize_frames_with_gemma" not in text:
+        fail("app.py is not importing summarize_frames_with_gemma")
+    if "summarize_frames_with_gemma(" not in text:
+        fail("app.py is not calling summarize_frames_with_gemma")
     if "style_key_from_label(summary_style)" not in text:
         fail("app.py is not normalizing style label via style_key_from_label")
     if "build_search_text(summary, frame_descriptions)" not in text:
         fail("app.py is not building search_text for embedding/storage")
-    if 'summary_engine="ollama"' not in text:
-        fail("app.py is not marking stored summaries as ollama engine")
+    if 'summary_engine="gemma4"' not in text:
+        fail("app.py is not marking stored summaries as gemma4 engine")
     if "upload_local_file_to_video_bucket" not in text:
         fail("app.py is not uploading videos to Supabase Storage when configured")
     if "storage_object_path=storage_object_path" not in text:
@@ -58,7 +58,7 @@ def check_app_routing() -> None:
     ptext = page.read_text(encoding="utf-8")
     if "search_similar_by_text" not in ptext:
         fail("semantic search page is not calling search_similar_by_text")
-    ok("app.py uses Ollama summarizer + template-aware storage inputs")
+    ok("app.py uses Gemma summarizer + template-aware storage inputs")
 
 
 def check_templates_and_search_text() -> None:
@@ -72,7 +72,7 @@ def check_templates_and_search_text() -> None:
     if DEFAULT_VISION_MODEL_LABEL != "Cosmos-Reason2-8B":
         fail("DEFAULT_VISION_MODEL_LABEL is not Cosmos-Reason2-8B")
 
-    header = metadata_line("formal", "ollama", DEFAULT_VISION_MODEL_LABEL)
+    header = metadata_line("formal", "gemma4", DEFAULT_VISION_MODEL_LABEL)
     template_id = parse_template_id_from_summary(header + "\n\nBody")
     if template_id != "cosmos_summary_v1":
         fail("parse_template_id_from_summary failed to parse cosmos_summary_v1")
@@ -179,7 +179,7 @@ def check_video_store_insert_schemas() -> None:
             summary_style="formal",
             summary_text="hello",
             embedding=[0.1, 0.2, 0.3],
-            summary_engine="ollama",
+            summary_engine="gemma4",
             vision_model="Cosmos-Reason2-8B",
             template_id="cosmos_summary_v1",
             search_text="hello world",
@@ -209,7 +209,7 @@ def check_video_store_insert_schemas() -> None:
             summary_style="concise",
             summary_text="world",
             embedding=[0.4, 0.5, 0.6],
-            summary_engine="ollama",
+            summary_engine="gemma4",
             vision_model="Cosmos-Reason2-8B",
             template_id="cosmos_summary_v1",
             search_text="world captions",

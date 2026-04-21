@@ -17,7 +17,7 @@ from db.supabase_storage import (
 from db.video_store import insert_summary
 from embeddings.embedder import embed_text
 from model_handler import CosmosModelHandler
-from summarys.ollama_summarizer import summarize_frames_with_ollama
+from summarys.gemma_summarizer import summarize_frames_with_gemma
 from summarys.summary_templates import (
     DEFAULT_VISION_MODEL_LABEL,
     parse_template_id_from_summary,
@@ -115,7 +115,7 @@ with col1:
 
                     st.info("Step 3/3: Generating video summary...")
                     style_key = style_key_from_label(summary_style)
-                    summary = summarize_frames_with_ollama(
+                    summary = summarize_frames_with_gemma(
                         frame_descriptions,
                         timestamps,
                         style=style_key,
@@ -154,7 +154,7 @@ with col1:
                             summary_style=style_key,
                             summary_text=summary,
                             embedding=embedding,
-                            summary_engine="ollama",
+                            summary_engine="gemma4",
                             vision_model=os.getenv("COSMOS_MODEL_LABEL", DEFAULT_VISION_MODEL_LABEL),
                             template_id=parse_template_id_from_summary(summary),
                             search_text=search_text,

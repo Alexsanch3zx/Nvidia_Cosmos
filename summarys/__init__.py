@@ -1,2 +1,2 @@
-"""Summary generation package (Ollama + shared templates)."""
+"""Summary generation package (Gemma + shared templates)."""
 

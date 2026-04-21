@@ -1,5 +1,5 @@
 """
-Canonical summarization layout for Ollama-generated summaries.
+Canonical summarization layout for LLM-generated summaries.
 
 Metadata helpers and prompts; embeddings/search reuse the same template header.
 """
