@@ -9,8 +9,8 @@ Streamlit app for authenticated video upload, frame-level analysis with `Cosmos-
 - Stores summary metadata and embedding in PostgreSQL/pgvector.
 - Optionally uploads original videos to Supabase Storage and displays playable URLs in search results.
 - Provides two pages:
-  - `app.py`: upload + summarize + inline archive search
-  - `pages/2_Semantic_search.py`: dedicated semantic search view
+  - `app.py`: upload + summarize workflow
+  - `pages/2_Semantic_search.py`: dedicated semantic retrieval view
 
 ## Visual Flow
 
@@ -156,7 +156,7 @@ Extended columns used when available:
   - optional Storage upload
   - summary + embedding insert into DB
 5. Review summary, download text, preview sample frames.
-6. Search archived summaries from sidebar or Semantic Search page.
+6. Search archived summaries on the dedicated Semantic search page.
 
 ## Troubleshooting
 

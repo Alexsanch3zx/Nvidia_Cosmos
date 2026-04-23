@@ -11,7 +11,6 @@ class SidebarConfig:
     frame_interval: int
     max_frames: int
     summary_style: str
-    search_query: str
 
 
 def render_sidebar() -> SidebarConfig:
@@ -50,19 +49,10 @@ def render_sidebar() -> SidebarConfig:
     )
 
     st.sidebar.divider()
-    st.sidebar.subheader("Archive Search")
-    search_query = st.sidebar.text_input(
-        "Search saved summaries",
-        placeholder="Example: pedestrian crossing",
-        help="Run semantic search across previously saved summaries.",
-        key="sidebar_search_query",
-    )
-    st.sidebar.caption("Other pages: open **Semantic search** below.")
 
     return SidebarConfig(
         theme_mode=theme_mode,
         frame_interval=frame_interval,
         max_frames=max_frames,
         summary_style=summary_style,
-        search_query=search_query,
     )

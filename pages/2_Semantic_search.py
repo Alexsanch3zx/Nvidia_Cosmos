@@ -10,7 +10,7 @@ from state.session import init_session_state
 from ui.theme import apply_theme
 
 st.set_page_config(
-    page_title="Semantic search",
+    page_title="AI Incident Retrieval",
     page_icon="🔎",
     layout="wide",
 )
@@ -20,7 +20,7 @@ require_login()
 render_user_sidebar()
 apply_theme(st.session_state.theme_mode)
 
-st.title("🔎 Semantic search")
+st.title("🔎 AI Incident Retrieval")
 st.markdown(
     "Describe an incident in plain language. We match your text to saved summaries "
     "(and the frame captions stored with them) using the same embedding model as upload."

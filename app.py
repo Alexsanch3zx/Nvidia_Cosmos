@@ -2,8 +2,6 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from auth import render_user_sidebar, require_login
-from db.supabase_storage import try_public_video_url
-from services.archive_search import run_archive_search
 from services.pipeline import run_generate_summary_workflow
 from state.session import init_session_state
 from ui.components import format_duration, format_filesize, render_metric_card
@@ -41,7 +39,7 @@ with overview_cols[0]:
 with overview_cols[1]:
     render_metric_card("Workflow", "3-stage pipeline", "Frame extraction, visual interpretation, and structured summary synthesis.")
 with overview_cols[2]:
-    render_metric_card("Archive search", "Semantic retrieval", "Saved summaries can be searched from the sidebar to support review and comparison.")
+    render_metric_card("Archive search", "Semantic retrieval", "Use the dedicated Semantic Search page to query and review archived summaries.")
 
 col1, col2 = st.columns([1, 1])
 
@@ -112,51 +110,6 @@ with col2:
                 """,
                 unsafe_allow_html=True,
             )
-
-st.divider()
-st.markdown('<div class="section-eyebrow">Archive</div>', unsafe_allow_html=True)
-st.subheader("Saved Summary Search Results")
-search_query = sidebar_config.search_query
-if search_query and search_query.strip():
-    st.markdown('<div class="section-intro">Results below are retrieved semantically from previously saved summaries.</div>', unsafe_allow_html=True)
-    with st.spinner("Searching archived summaries..."):
-        results, error_message = run_archive_search(search_query.strip(), limit=10)
-    if error_message:
-        st.error(f"Search failed (check SUPABASE_DB_URL and pgvector): {error_message}")
-    elif results:
-        for result in results:
-            filename = result.get("filename") or "Unknown file"
-            summary_text = result.get("summary_text") or ""
-            distance = result.get("distance")
-            storage_key = result.get("storage_object_path")
-            with st.container(border=True):
-                st.markdown(f'<div class="search-result-title">{filename}</div>', unsafe_allow_html=True)
-                meta_text = f"Vector distance: {distance:.4f}" if distance is not None else "Similarity score unavailable"
-                st.markdown(f'<div class="search-result-meta">{meta_text}</div>', unsafe_allow_html=True)
-                video_url = try_public_video_url(storage_key) if storage_key else None
-                if video_url:
-                    st.video(video_url)
-                st.write(summary_text)
-    else:
-        st.markdown(
-            """
-            <div class="empty-state">
-                No related summaries were found for the current search. Try broader keywords or add more archived
-                summaries to improve retrieval coverage.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-else:
-    st.markdown(
-        """
-        <div class="empty-state">
-            Use the archive search field in the sidebar to retrieve previously saved summaries and compare them with
-            the current submission.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
 st.markdown("---")
 st.markdown("<div class='app-footer'>Trinity College Senior Project 2026 - Osarfo-Akoto, Sanchez, Carpe-Elias </div>", unsafe_allow_html=True)

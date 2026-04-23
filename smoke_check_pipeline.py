@@ -40,8 +40,6 @@ def check_app_routing() -> None:
 
     if "from services.pipeline import run_generate_summary_workflow" not in text:
         fail("app.py is not routing generation through services.pipeline")
-    if "from services.archive_search import run_archive_search" not in text:
-        fail("app.py is not routing archive search through services.archive_search")
     if "from state.session import init_session_state" not in text:
         fail("app.py is not using centralized session state initialization")
     if "from ui.sidebar import render_sidebar" not in text:
@@ -71,7 +69,9 @@ def check_app_routing() -> None:
     ptext = page.read_text(encoding="utf-8")
     if "search_similar_by_text" not in ptext:
         fail("semantic search page is not calling search_similar_by_text")
-    ok("app.py delegates orchestration and pipeline keeps Gemma/template-aware storage behavior")
+    if "search_similar_by_text" in text:
+        fail("app.py should not perform archive semantic search directly")
+    ok("app.py delegates orchestration; semantic search lives on the dedicated page")
 
 
 def check_templates_and_search_text() -> None:
