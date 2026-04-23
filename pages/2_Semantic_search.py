@@ -6,6 +6,8 @@ load_dotenv()
 from auth import render_user_sidebar, require_login
 from db.search_video import search_similar_by_text
 from db.supabase_storage import try_public_video_url
+from state.session import init_session_state
+from ui.theme import apply_theme
 
 st.set_page_config(
     page_title="Semantic search",
@@ -13,8 +15,10 @@ st.set_page_config(
     layout="wide",
 )
 
+init_session_state()
 require_login()
 render_user_sidebar()
+apply_theme(st.session_state.theme_mode)
 
 st.title("🔎 Semantic search")
 st.markdown(

@@ -6,6 +6,8 @@ import os
 
 import streamlit as st
 
+from ui.theme import apply_theme, normalize_theme
+
 
 def ensure_auth_state() -> None:
     if "logged_in" not in st.session_state:
@@ -31,6 +33,13 @@ def get_credentials() -> dict[str, str]:
 def require_login() -> None:
     """If not logged in, render login form and stop."""
     ensure_auth_state()
+    # Ensure theme exists even before login so auth UI matches app styling.
+    if "theme_mode" not in st.session_state:
+        st.session_state.theme_mode = normalize_theme(os.getenv("UI_THEME"))
+    else:
+        st.session_state.theme_mode = normalize_theme(st.session_state.theme_mode)
+    apply_theme(st.session_state.theme_mode)
+
     if st.session_state.logged_in:
         return
 
