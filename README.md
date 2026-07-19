@@ -1,8 +1,12 @@
-# Video Summarizer with Nvidia Cosmos AI
+# AI Video Analytics for Pedestrian Safety — City of Hartford
 
-Streamlit app for authenticated video upload, frame-level analysis with `Cosmos-Reason2-8B`, summary generation with Gemma, optional Supabase Storage upload, and semantic retrieval over archived summaries.
+An AI-powered video analytics system built for the **City of Hartford** to improve **pedestrian safety**. It turns traffic and street camera footage into structured, searchable insights so city staff can review incidents, near-misses, and street conditions without watching every hour of video by hand.
+
+Using NVIDIA Cosmos for visual understanding and Gemma for written summaries, the system helps Hartford identify risks at crosswalks and intersections, document what happened in a clear municipal-style report, and later find related clips through semantic search—supporting safer streets with faster, evidence-based review.
 
 ## What It Does
+
+Streamlit app for authenticated video upload, frame-level analysis with `Cosmos-Reason2-8B`, summary generation with Gemma, optional Supabase Storage upload, and semantic retrieval over archived summaries.
 
 - Uploads video files (`mp4`, `avi`, `mov`, `mkv`) and extracts representative frames.
 - Runs visual analysis with Cosmos, then generates a structured summary with Gemma.
