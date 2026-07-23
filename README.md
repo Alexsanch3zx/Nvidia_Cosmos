@@ -20,7 +20,11 @@ Streamlit app for authenticated video upload, frame-level analysis with `Cosmos-
 
 ![Video processing and semantic retrieval flow](./diagrams/flow.png)
 
+## Symposium Poster
 
+[Download the symposium poster (PDF)](./SymposiumPoster.pdf)
+
+![Symposium poster](./diagrams/symposium_poster.png)
 
 ## Current Project Structure
 
